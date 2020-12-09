@@ -3,11 +3,11 @@
 --SKIPIF--
 <?php
 if (!extension_loaded('%EXTNAME%')) {
-	echo 'skip';
+    echo 'skip';
 }
 ?>
 --FILE--
-<?php 
+<?php
 var_dump(%EXTNAME%_test2());
 var_dump(%EXTNAME%_test2('PHP'));
 ?>

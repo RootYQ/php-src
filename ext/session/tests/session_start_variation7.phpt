@@ -7,12 +7,6 @@ Test session_start() function : variation
 
 ob_start();
 
-/* 
- * Prototype : bool session_start(void)
- * Description : Initialize session data
- * Source code : ext/session/session.c 
- */
-
 echo "*** Testing session_start() : variation ***\n";
 
 session_start();
@@ -58,4 +52,3 @@ array(4) {
 array(0) {
 }
 Done
-

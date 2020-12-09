@@ -17,17 +17,11 @@ session.name=PHPSESSID
 
 ob_start();
 
-/*
- * Prototype : session.use_strict_mode=1
- * Description : Test basic functionality.
- * Source code : ext/session/session.c, ext/session/mod_files.c
- */
-
 echo "*** Testing basic session functionality : variation2 ***\n";
 
-$session_id = 'testid';
+$session_id = 'session-basic2';
 session_id($session_id);
-$path = dirname(__FILE__);
+$path = __DIR__;
 var_dump(session_save_path($path));
 
 echo "*** Without lazy_write ***\n";
@@ -61,7 +55,7 @@ ob_end_flush();
 *** Testing basic session functionality : variation2 ***
 string(0) ""
 *** Without lazy_write ***
-string(6) "testid"
+string(14) "session-basic2"
 bool(true)
 bool(true)
 bool(true)
@@ -79,5 +73,3 @@ bool(true)
 string(0) ""
 bool(true)
 bool(true)
-
-

@@ -1,4 +1,3 @@
-
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #include "fpm_config.h"
@@ -208,7 +207,11 @@ void fpm_children_bury() /* {{{ */
 
 		} else if (WIFSIGNALED(status)) {
 			const char *signame = fpm_signal_names[WTERMSIG(status)];
+#ifdef WCOREDUMP
 			const char *have_core = WCOREDUMP(status) ? " - core dumped" : "";
+#else
+			const char* have_core = "";
+#endif
 
 			if (signame == NULL) {
 				signame = "";
@@ -343,7 +346,7 @@ static void fpm_child_resources_use(struct fpm_child_s *child) /* {{{ */
 {
 	struct fpm_worker_pool_s *wp;
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
-		if (wp == child->wp) {
+		if (wp == child->wp || wp == child->wp->shared) {
 			continue;
 		}
 		fpm_scoreboard_free(wp->scoreboard);
@@ -401,6 +404,11 @@ int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to
 			return 2;
 		}
 
+		zlog(ZLOG_DEBUG, "blocking signals before child birth");
+		if (0 > fpm_signals_child_block()) {
+			zlog(ZLOG_WARNING, "child may miss signals");
+		}
+
 		pid = fork();
 
 		switch (pid) {
@@ -412,12 +420,16 @@ int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to
 				return 0;
 
 			case -1 :
+				zlog(ZLOG_DEBUG, "unblocking signals");
+				fpm_signals_unblock();
 				zlog(ZLOG_SYSERROR, "fork() failed");
 
 				fpm_resources_discard(child);
 				return 2;
 
 			default :
+				zlog(ZLOG_DEBUG, "unblocking signals, child born");
+				fpm_signals_unblock();
 				child->pid = pid;
 				fpm_clock_get(&child->started);
 				fpm_parent_resources_use(child);
@@ -481,4 +493,3 @@ int fpm_children_init_main() /* {{{ */
 	return 0;
 }
 /* }}} */
-

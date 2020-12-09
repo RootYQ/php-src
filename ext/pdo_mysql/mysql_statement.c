@@ -1,8 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | PHP Version 7                                                        |
-  +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2018 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -102,7 +100,7 @@ static int pdo_mysql_stmt_dtor(pdo_stmt_t *stmt) /* {{{ */
 		}
 	}
 
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 	if (!S->stmt && S->current_data) {
 		mnd_free(S->current_data);
 	}
@@ -146,7 +144,7 @@ static int pdo_mysql_fill_stmt_from_result(pdo_stmt_t *stmt) /* {{{ */
 		}
 
 		stmt->row_count = (zend_long) mysql_num_rows(S->result);
-		stmt->column_count = (int) mysql_num_fields(S->result);
+		php_pdo_stmt_set_column_count(stmt, (int) mysql_num_fields(S->result));
 		S->fields = mysql_fetch_fields(S->result);
 	} else {
 		/* this was a DML or DDL query (INSERT, UPDATE, DELETE, ... */
@@ -196,7 +194,7 @@ static int pdo_mysql_stmt_execute_prepared_libmysql(pdo_stmt_t *stmt) /* {{{ */
 				efree(S->out_length);
 			}
 
-			stmt->column_count = (int)mysql_num_fields(S->result);
+			php_pdo_stmt_set_column_count(stmt, (int)mysql_num_fields(S->result));
 			S->bound_result = ecalloc(stmt->column_count, sizeof(MYSQL_BIND));
 			S->out_null = ecalloc(stmt->column_count, sizeof(my_bool));
 			S->out_length = ecalloc(stmt->column_count, sizeof(zend_ulong));
@@ -257,7 +255,10 @@ static int pdo_mysql_stmt_execute_prepared_libmysql(pdo_stmt_t *stmt) /* {{{ */
 
 			/* if buffered, pre-fetch all the data */
 			if (H->buffered) {
-				mysql_stmt_store_result(S->stmt);
+				if (mysql_stmt_store_result(S->stmt)) {
+					pdo_mysql_error_stmt(stmt);
+					PDO_DBG_RETURN(0);
+				}
 			}
 		}
 	}
@@ -289,7 +290,7 @@ static int pdo_mysql_stmt_execute_prepared_mysqlnd(pdo_stmt_t *stmt) /* {{{ */
 	}
 
 	/* for SHOW/DESCRIBE and others the column/field count is not available before execute */
-	stmt->column_count = mysql_stmt_field_count(S->stmt);
+	php_pdo_stmt_set_column_count(stmt, mysql_stmt_field_count(S->stmt));
 	for (i = 0; i < stmt->column_count; i++) {
 		mysqlnd_stmt_bind_one_result(S->stmt, i);
 	}
@@ -300,6 +301,7 @@ static int pdo_mysql_stmt_execute_prepared_mysqlnd(pdo_stmt_t *stmt) /* {{{ */
 		/* if buffered, pre-fetch all the data */
 		if (H->buffered) {
 			if (mysql_stmt_store_result(S->stmt)) {
+				pdo_mysql_error_stmt(stmt);
 				PDO_DBG_RETURN(0);
 			}
 		}
@@ -341,28 +343,19 @@ static int pdo_mysql_stmt_next_rowset(pdo_stmt_t *stmt) /* {{{ */
 {
 	pdo_mysql_stmt *S = (pdo_mysql_stmt*)stmt->driver_data;
 	pdo_mysql_db_handle *H = S->H;
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 	zend_long row_count;
 #endif
 	PDO_DBG_ENTER("pdo_mysql_stmt_next_rowset");
 	PDO_DBG_INF_FMT("stmt=%p", S->stmt);
 
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 	if (!H->emulate_prepare) {
 		if (!mysqlnd_stmt_more_results(S->stmt)) {
 			PDO_DBG_RETURN(0);
 		}
 		if (mysqlnd_stmt_next_result(S->stmt)) {
-			PDO_DBG_RETURN(0);
-		}
-
-		if (!mysqlnd_stmt_more_results(S->stmt)) {
-			/*
-			MySQL gives us n + 1 result sets for
-			CALL proc() and n result sets returned by the proc itself.
-			Result set n + 1 is about the procedure call itself.
-			As the PDO emulation does not return it, we skip it as well
-			*/
+			pdo_mysql_error_stmt(stmt);
 			PDO_DBG_RETURN(0);
 		}
 
@@ -375,7 +368,7 @@ static int pdo_mysql_stmt_next_rowset(pdo_stmt_t *stmt) /* {{{ */
 			/* for SHOW/DESCRIBE and others the column/field count is not available before execute */
 			int i;
 
-			stmt->column_count = mysql_stmt_field_count(S->stmt);
+			php_pdo_stmt_set_column_count(stmt, mysql_stmt_field_count(S->stmt));
 			for (i = 0; i < stmt->column_count; i++) {
 				mysqlnd_stmt_bind_one_result(S->stmt, i);
 			}
@@ -388,7 +381,8 @@ static int pdo_mysql_stmt_next_rowset(pdo_stmt_t *stmt) /* {{{ */
 			/* if buffered, pre-fetch all the data */
 			if (H->buffered) {
 				if (mysql_stmt_store_result(S->stmt)) {
-					PDO_DBG_RETURN(1);
+					pdo_mysql_error_stmt(stmt);
+					PDO_DBG_RETURN(0);
 				}
 			}
 		}
@@ -403,9 +397,6 @@ static int pdo_mysql_stmt_next_rowset(pdo_stmt_t *stmt) /* {{{ */
 /* ensure that we free any previous unfetched results */
 #ifndef PDO_USE_MYSQLND
 	if (S->stmt) {
-		if (S->result) {
-			stmt->column_count = (int)mysql_num_fields(S->result);
-		}
 		mysql_stmt_free_result(S->stmt);
 	}
 #endif
@@ -418,7 +409,7 @@ static int pdo_mysql_stmt_next_rowset(pdo_stmt_t *stmt) /* {{{ */
 		/* No more results */
 		PDO_DBG_RETURN(0);
 	}
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 	if (mysql_next_result(H->server) == FAIL) {
 		pdo_mysql_error_stmt(stmt);
 		PDO_DBG_RETURN(0);
@@ -493,7 +484,7 @@ static int pdo_mysql_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_da
 					parameter = Z_REFVAL(param->parameter);
 				}
 
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 				if (PDO_PARAM_TYPE(param->param_type) == PDO_PARAM_NULL || (Z_TYPE_P(parameter) == IS_NULL)) {
 					mysqlnd_stmt_bind_one_param(S->stmt, param->paramno, parameter, MYSQL_TYPE_NULL);
 					PDO_DBG_RETURN(1);
@@ -539,7 +530,7 @@ static int pdo_mysql_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_da
 						;
 				}
 
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 				/* Is it really correct to check the zval's type? - But well, that's what the old code below does, too */
 				PDO_DBG_INF_FMT("param->parameter->type=%d", Z_TYPE(param->parameter));
 				if (!Z_ISREF(param->parameter)) {
@@ -557,6 +548,10 @@ static int pdo_mysql_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_da
 #elif SIZEOF_ZEND_LONG==4
 						mysqlnd_stmt_bind_one_param(S->stmt, param->paramno, parameter, MYSQL_TYPE_LONG);
 #endif /* SIZEOF_LONG */
+						break;
+					case IS_TRUE:
+					case IS_FALSE:
+						mysqlnd_stmt_bind_one_param(S->stmt, param->paramno, parameter, MYSQL_TYPE_TINY);
 						break;
 					case IS_DOUBLE:
 						mysqlnd_stmt_bind_one_param(S->stmt, param->paramno, parameter, MYSQL_TYPE_DOUBLE);
@@ -612,17 +607,27 @@ static int pdo_mysql_stmt_param_hook(pdo_stmt_t *stmt, struct pdo_bound_param_da
 static int pdo_mysql_stmt_fetch(pdo_stmt_t *stmt, enum pdo_fetch_orientation ori, zend_long offset) /* {{{ */
 {
 	pdo_mysql_stmt *S = (pdo_mysql_stmt*)stmt->driver_data;
-#if PDO_USE_MYSQLND
+
+	if (!S->result) {
+		PDO_DBG_RETURN(0);
+	}
+
+#ifdef PDO_USE_MYSQLND
 	zend_bool fetched_anything;
 
 	PDO_DBG_ENTER("pdo_mysql_stmt_fetch");
 	PDO_DBG_INF_FMT("stmt=%p", S->stmt);
 	if (S->stmt) {
 		if (FAIL == mysqlnd_stmt_fetch(S->stmt, &fetched_anything) || fetched_anything == FALSE) {
+			pdo_mysql_error_stmt(stmt);
 			PDO_DBG_RETURN(0);
 		}
 
 		PDO_DBG_RETURN(1);
+	}
+
+	if (!S->stmt && S->current_data) {
+		mnd_free(S->current_data);
 	}
 #else
 	int ret;
@@ -647,22 +652,8 @@ static int pdo_mysql_stmt_fetch(pdo_stmt_t *stmt, enum pdo_fetch_orientation ori
 	}
 #endif /* PDO_USE_MYSQLND */
 
-	if (!S->result) {
-		strcpy(stmt->error_code, "HY000");
-		PDO_DBG_RETURN(0);
-	}
-#if PDO_USE_MYSQLND
-	if (!S->stmt && S->current_data) {
-		mnd_free(S->current_data);
-	}
-#endif /* PDO_USE_MYSQLND */
-
 	if ((S->current_data = mysql_fetch_row(S->result)) == NULL) {
-#if PDO_USE_MYSQLND
-		if (S->result->unbuf && !S->result->unbuf->eof_reached && mysql_errno(S->H->server)) {
-#else
-		if (!S->result->eof && mysql_errno(S->H->server)) {
-#endif
+		if (!S->H->buffered && mysql_errno(S->H->server)) {
 			pdo_mysql_error_stmt(stmt);
 		}
 		PDO_DBG_RETURN(0);
@@ -741,7 +732,7 @@ static int pdo_mysql_stmt_get_col(pdo_stmt_t *stmt, int colno, char **ptr, size_
 		/* error invalid column */
 		PDO_DBG_RETURN(0);
 	}
-#if PDO_USE_MYSQLND
+#ifdef PDO_USE_MYSQLND
 	if (S->stmt) {
 		Z_TRY_ADDREF(S->stmt->data->result_bind[colno].zv);
 		*ptr = (char*)&S->stmt->data->result_bind[colno].zv;
@@ -874,7 +865,7 @@ static int pdo_mysql_stmt_col_meta(pdo_stmt_t *stmt, zend_long colno, zval *retu
 		case MYSQL_TYPE_SHORT:
 		case MYSQL_TYPE_INT24:
 		case MYSQL_TYPE_LONG:
-#if SIZEOF_LONG==8
+#if SIZEOF_ZEND_LONG==8
 		case MYSQL_TYPE_LONGLONG:
 #endif
 			add_assoc_long(return_value, "pdo_type", PDO_PARAM_INT);
@@ -934,12 +925,3 @@ const struct pdo_stmt_methods mysql_stmt_methods = {
 	pdo_mysql_stmt_next_rowset,
 	pdo_mysql_stmt_cursor_closer
 };
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

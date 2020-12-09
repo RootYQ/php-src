@@ -1,4 +1,3 @@
-
 	/* (c) 2009 Jerome Loyet */
 
 #ifndef FPM_SCOREBOARD_H
@@ -64,6 +63,7 @@ struct fpm_scoreboard_s {
 	unsigned int nprocs;
 	int free_proc;
 	unsigned long int slow_rq;
+	struct fpm_scoreboard_s *shared;
 	struct fpm_scoreboard_proc_s *procs[];
 };
 

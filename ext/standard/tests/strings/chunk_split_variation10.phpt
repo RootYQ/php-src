@@ -2,12 +2,6 @@
 Test chunk_split() function : usage variations - different single quoted strings for 'ending' argument
 --FILE--
 <?php
-/* Prototype  : string chunk_split(string $str [, int $chunklen [, string $ending]])
- * Description: Returns split line
- * Source code: ext/standard/string.c
- * Alias to functions: none
-*/
-
 /*
 * passing different single quoted strings for 'ending' arguments to chunk_split()
 * 'chunklen' is set to 9.2 for this testcase
@@ -28,12 +22,12 @@ $values = array (
   'ENDING',  //String
   '@#$%^',  //Special chars
 
-  
-  '\t',  
+
+  '\t',
   '\n',
   '\r',
   '\r\n',
-  
+
   '\0',  //Null char
   '123',  //Numeric
   '(MSG)',  //With ( and )

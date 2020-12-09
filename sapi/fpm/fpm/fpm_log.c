@@ -1,4 +1,3 @@
-
 	/* (c) 2009 Jerome Loyet */
 
 #include "php.h"
@@ -311,7 +310,7 @@ int fpm_log_write(char *log_format) /* {{{ */
 								continue;
 							}
 
-							/* test if enought char after the header name + ': ' */
+							/* test if enough char after the header name + ': ' */
 							if (h->header_len <= format_len + 2) {
 								h = (sapi_header_struct*)zend_llist_get_next_ex(&sapi_headers->headers, &pos);
 								continue;

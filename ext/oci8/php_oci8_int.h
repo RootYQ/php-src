@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 7                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -20,12 +18,12 @@
    | ZTS per process OCIPLogon by Harald Radi <harald.radi@nme.at>        |
    |                                                                      |
    | Redesigned by: Antony Dovgal <antony@zend.com>                       |
-   |                Andi Gutmans <andi@zend.com>                          |
+   |                Andi Gutmans <andi@php.net>                           |
    |                Wez Furlong <wez@omniti.com>                          |
    +----------------------------------------------------------------------+
 */
 
-#if HAVE_OCI8
+#ifdef HAVE_OCI8
 # ifndef PHP_OCI8_INT_H
 #  define PHP_OCI8_INT_H
 
@@ -344,7 +342,9 @@ typedef struct {
 			case  3114:							  \
 			case  3122:							  \
 			case  3135:							  \
+			case  3136:							  \
 			case 12153:							  \
+			case 12161:							  \
 			case 27146:							  \
 			case 28511:							  \
 				(connection)->is_open = 0;		  \
@@ -369,22 +369,22 @@ typedef struct {
 
 #define PHP_OCI_ZVAL_TO_CONNECTION(zval, connection) \
 	if ((connection = (php_oci_connection *)zend_fetch_resource2(Z_RES_P(zval), "oci8 connection", le_connection, le_pconnection)) == NULL) { \
-		RETURN_FALSE; \
+		RETURN_THROWS(); \
 	}
 
 #define PHP_OCI_ZVAL_TO_STATEMENT(zval, statement) \
 	if ((statement = (php_oci_statement *)zend_fetch_resource(Z_RES_P(zval), "oci8 statement", le_statement)) == NULL) { \
-		RETURN_FALSE; \
+		RETURN_THROWS(); \
 	}
 
 #define PHP_OCI_ZVAL_TO_DESCRIPTOR(zval, descriptor) \
 	if ((descriptor = (php_oci_descriptor *)zend_fetch_resource(Z_RES_P(zval), "oci8 descriptor", le_descriptor)) == NULL) { \
-		RETURN_FALSE; \
+		RETURN_THROWS(); \
 	}
 
 #define PHP_OCI_ZVAL_TO_COLLECTION(zval, collection) \
 	if ((collection = (php_oci_collection *)zend_fetch_resource(Z_RES_P(zval), "oci8 collection", le_collection)) == NULL) { \
-		RETURN_FALSE; \
+		RETURN_THROWS(); \
 	}
 
 #define PHP_OCI_FETCH_RESOURCE_EX(zval, var, type, name, resource_type)						 \
@@ -545,6 +545,14 @@ int php_oci_unregister_taf_callback(php_oci_connection *connection);
 #define OCI_G(v) (oci_globals.v)
 #endif
 
+/* Allow install from PECL on PHP < 7.3 */
+#ifndef GC_ADDREF
+# define GC_ADDREF(p) (++GC_REFCOUNT(p))
+#endif
+#ifndef GC_DELREF
+# define GC_DELREF(p) (GC_REFCOUNT(p)--)
+#endif
+
 ZEND_EXTERN_MODULE_GLOBALS(oci)
 
 # endif /* !PHP_OCI8_INT_H */
@@ -553,12 +561,3 @@ ZEND_EXTERN_MODULE_GLOBALS(oci)
 # define oci8_module_ptr NULL
 
 #endif /* HAVE_OCI8 */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

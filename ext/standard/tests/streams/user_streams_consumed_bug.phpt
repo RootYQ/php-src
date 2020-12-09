@@ -24,9 +24,9 @@ stream_filter_append(STDOUT, "intercept_filter");
 
 $out = fwrite(STDOUT, "Goodbye\n");
 var_dump($out);
+?>
 --EXPECT--
 Hello
 int(6)
 Goodbye
 int(8)
-

@@ -1,4 +1,4 @@
-PHP 7.4 UPGRADE NOTES
+PHP 8.1 UPGRADE NOTES
 
 1. Backward Incompatible Changes
 2. New Features
@@ -13,7 +13,7 @@ PHP 7.4 UPGRADE NOTES
 11. Changes to INI File Handling
 12. Windows Support
 13. Other Changes
-
+14. Performance Improvements
 
 ========================================
 1. Backward Incompatible Changes
@@ -22,6 +22,13 @@ PHP 7.4 UPGRADE NOTES
 ========================================
 2. New Features
 ========================================
+
+- hash:
+  . Added MurmurHash3 with streaming support. The following variants are implemented
+
+    - murmur3a, 32-bit hash
+    - murmur3c, 128-bit hash for x86
+    - murmur3f, 128-bit hash for x64
 
 ========================================
 3. Changes in SAPI modules
@@ -51,12 +58,13 @@ PHP 7.4 UPGRADE NOTES
 9. Other Changes to Extensions
 ========================================
 
-- Reflection:
-  . Numeric value of class, property, function and constant modifiers was
-    changed. Don't filter methods and properties through
-    ReflectionClass::getMethods() and ReflectionClass::getProperties(), or test
-    results of Reflection...::getModifiers(), using hard-coded numeric values.
-    Use corresponding constants instead (e.g. ReflectionMethod::IS_PUBLIC).
+- OpenSSL:
+  . The OpenSSL extension now requires at least OpenSSL version 1.0.2.
+
+- Standard:
+  . --with-password-argon2 now uses pkg-config to detect libargon2. As such,
+    an alternative libargon2 location should now be specified using
+    PKG_CONFIG_PATH.
 
 ========================================
 10. New Global Constants
@@ -70,6 +78,12 @@ PHP 7.4 UPGRADE NOTES
 12. Windows Support
 ========================================
 
+. The macro IGNORE_URL_WIN has been removed; it had no effect as of PHP 5.0.0.
+
 ========================================
 13. Other Changes
+========================================
+
+========================================
+14. Performance Improvements
 ========================================

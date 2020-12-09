@@ -13,20 +13,20 @@ session.save_handler=files
 error_reporting(E_ALL);
 ob_start();
 
-session_id("abtest");
+session_id("test026");
 session_start();
 
 class a {
     public $test = "hallo";
 }
- 
+
 class b {
     public $a;
     function __construct(&$a) {
         $this->a = &$a;
     }
 }
- 
+
 $a = new a();
 $b = new b($a);
 

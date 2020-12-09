@@ -1,8 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | PHP Version 7                                                        |
-  +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2018 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -14,7 +12,7 @@
   +----------------------------------------------------------------------+
   | Authors: Brad Lafountain <rodif_bl@yahoo.com>                        |
   |          Shane Caraveo <shane@caraveo.com>                           |
-  |          Dmitry Stogov <dmitry@zend.com>                             |
+  |          Dmitry Stogov <dmitry@php.net>                              |
   +----------------------------------------------------------------------+
 */
 
@@ -25,7 +23,7 @@
 #include "php_globals.h"
 #include "ext/standard/info.h"
 #include "ext/standard/php_standard.h"
-#if HAVE_PHP_SESSION && !defined(COMPILE_DL_SESSION)
+#if defined(HAVE_PHP_SESSION) && !defined(COMPILE_DL_SESSION)
 #include "ext/session/php_session.h"
 #endif
 #include "zend_smart_str.h"

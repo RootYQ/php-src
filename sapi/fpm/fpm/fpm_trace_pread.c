@@ -1,4 +1,3 @@
-
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #define _GNU_SOURCE
@@ -10,11 +9,7 @@
 
 #include <fcntl.h>
 #include <stdio.h>
-#if HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-# include <stdint.h>
-#endif
+#include <inttypes.h>
 
 #include "fpm_trace.h"
 #include "fpm_process_ctl.h"
@@ -63,4 +58,3 @@ int fpm_trace_get_long(long addr, long *data) /* {{{ */
 	return 0;
 }
 /* }}} */
-

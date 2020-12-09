@@ -79,8 +79,5 @@ unlink($tmpPath);
 unlink($outPath);
 
 ?>
-==DONE==
 --EXPECT--
 bool(true)
-==DONE==
-

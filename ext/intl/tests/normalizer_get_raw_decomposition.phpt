@@ -13,24 +13,24 @@ normalizer_get_raw_decomposition()
 
 function ut_main()
 {
-	$result = '';
-	$strings = [
-		"a",
+    $result = '';
+    $strings = [
+        "a",
         "\u{FFDA}",
         "\u{FDFA}",
         "",
         "aa",
         "\xF5",
-	];
-    
+    ];
+
     foreach ($strings as $string) {
         $decomposition = ut_norm_get_raw_decomposition($string, Normalizer::FORM_KC);
         $error_code = intl_get_error_code();
         $error_message = intl_get_error_message();
-        
+
         $string_hex = bin2hex($string);
         $result .= "---------------------\n";
-        
+
         if ($decomposition === null) {
             $result .= "'$string_hex' has no decomposition mapping\n" ;
         } else {
@@ -39,7 +39,7 @@ function ut_main()
         $result .= "error info: '$error_message' ($error_code)\n";
     }
 
-	return $result;
+    return $result;
 }
 
 include_once( 'ut_common.inc' );
@@ -65,4 +65,3 @@ error info: 'Input string must be exactly one UTF-8 encoded code point long.: U_
 ---------------------
 'f5' has no decomposition mapping
 error info: 'Code point out of range: U_ILLEGAL_ARGUMENT_ERROR' (1)
-

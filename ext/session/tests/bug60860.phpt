@@ -6,7 +6,7 @@ include('skipif.inc');
 ?>
 --INI--
 session.save_handler=user
-display_errors=off
+error_log=
 --FILE--
 <?php
 
@@ -15,6 +15,5 @@ echo "ok\n";
 
 ?>
 --EXPECT--
-PHP Recoverable fatal error:  PHP Startup: Cannot set 'user' save handler by ini_set() or session_module_name() in Unknown on line 0
+Fatal error: PHP Startup: Session save handler "user" cannot be set by ini_set() in Unknown on line 0
 ok
-

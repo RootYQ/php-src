@@ -7,11 +7,6 @@ function_exists('mb_strrpos') or die("skip mb_strrpos() is not available in this
 ?>
 --FILE--
 <?php
-/* Prototype  : int mb_strrpos(string $haystack, string $needle [, int $offset [, string $encoding]])
- * Description: Find position of last occurrence of a string within another 
- * Source code: ext/mbstring/mbstring.c
- */
-
 /*
  * Test basic functionality of mb_strrpos()
  */
@@ -55,4 +50,3 @@ int(20)
 -- Multibyte string 2 --
 bool(false)
 Done
-

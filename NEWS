@@ -1,9 +1,25 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-?? ??? ????, PHP 7.4.0alpha1
+?? ??? ????, PHP 8.1.0alpha1
 
-- Standard:
-  . Fixed bug #74764 (Bindto IPv6 works with file_get_contents but fails with 
-    stream_socket_client). (Ville Hukkamäki)
+- Core:
+  . Fixed inclusion order for phpize builds on Windows. (cmb)
+  . Added missing hashtable insertion APIs for arr/obj/ref. (Sara)
+
+- FTP:
+  . Convert resource<ftp> to object \FTPConnection. (Sara)
+
+- GD:
+  . Convert resource<gd font> to object \GdFont. (Sara)
+
+- hash:
+  . Implemented FR #68109 (Add MurmurHash V3). (Anatol, Michael)
+
+- OpenSSL:
+  . Bump minimal OpenSSL version to 1.0.2. (Jakub Zelenka)
+
+- PSpell:
+  . Convert resource<pspell> to object \PSpell. (Sara)
+  . Convert resource<pspell config> to object \PSPellConfig. (Sara)
 
 <<< NOTE: Insert NEWS from last stable release here prior to actual release! >>>

@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 7                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2018 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,7 +10,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
    |          Sascha Schumann <sascha@schumann.cx>                        |
    |          Pierre Joye <pierre@php.net>                                |
    +----------------------------------------------------------------------+
@@ -22,7 +20,6 @@
 #define VIRTUAL_CWD_H
 
 #include "TSRM.h"
-#include "tsrm_config_common.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,8 +29,24 @@
 #include <utime.h>
 #endif
 
-#ifdef HAVE_STDARG_H
 #include <stdarg.h>
+#include <limits.h>
+
+#if HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
+
+#ifndef MAXPATHLEN
+# if _WIN32
+#  include "win32/ioutil.h"
+#  define MAXPATHLEN PHP_WIN32_IOUTIL_MAXPATHLEN
+# elif PATH_MAX
+#  define MAXPATHLEN PATH_MAX
+# elif defined(MAX_PATH)
+#  define MAXPATHLEN MAX_PATH
+# else
+#  define MAXPATHLEN 256
+# endif
 #endif
 
 #ifdef ZTS
@@ -51,7 +64,7 @@
 #endif
 
 #ifdef ZEND_WIN32
-#include "readdir.h"
+#include "win32/readdir.h"
 #include <sys/utime.h>
 #include "win32/ioutil.h"
 /* mode_t isn't defined on Windows */
@@ -120,7 +133,7 @@ typedef unsigned short mode_t;
 # define php_sys_stat php_win32_ioutil_stat
 # define php_sys_lstat php_win32_ioutil_lstat
 # define php_sys_fstat php_win32_ioutil_fstat
-CWD_API ssize_t php_sys_readlink(const char *link, char *target, size_t target_len);
+# define php_sys_readlink php_win32_ioutil_readlink
 # define php_sys_symlink php_win32_ioutil_symlink
 # define php_sys_link php_win32_ioutil_link
 #else
@@ -176,6 +189,7 @@ CWD_API int virtual_chown(const char *filename, uid_t owner, gid_t group, int li
 /* One of the following constants must be used as the last argument
    in virtual_file_ex() call. */
 
+// TODO Make this into an enum
 #define CWD_EXPAND   0 /* expand "." and ".." but don't resolve symlinks     */
 #define CWD_FILEPATH 1 /* resolve symlinks if file is exist otherwise expand */
 #define CWD_REALPATH 2 /* call realpath(), resolve symlinks. File must exist */
@@ -214,7 +228,8 @@ typedef struct _virtual_cwd_globals {
 
 #ifdef ZTS
 extern ts_rsrc_id cwd_globals_id;
-# define CWDG(v) ZEND_TSRMG(cwd_globals_id, virtual_cwd_globals *, v)
+extern size_t cwd_globals_offset;
+# define CWDG(v) ZEND_TSRMG_FAST(cwd_globals_offset, virtual_cwd_globals *, v)
 #else
 extern virtual_cwd_globals cwd_globals;
 # define CWDG(v) (cwd_globals.v)
@@ -367,13 +382,3 @@ extern void virtual_cwd_main_cwd_init(uint8_t);
 #endif
 
 #endif /* VIRTUAL_CWD_H */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

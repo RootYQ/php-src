@@ -4,7 +4,7 @@ session rfc1867 invalid settings 2
 session.upload_progress.freq=200%
 error_log=
 --SKIPIF--
-<?php 
+<?php
 include('skipif.inc');
 ?>
 --FILE--
@@ -12,7 +12,5 @@ include('skipif.inc');
 var_dump(ini_get("session.upload_progress.freq"));
 ?>
 --EXPECTF--
-PHP Warning:  PHP Startup: session.upload_progress.freq cannot be over 100% in %s
-
-Warning: PHP Startup: session.upload_progress.freq cannot be over 100% in %s
+Warning: PHP Startup: session.upload_progress.freq must be less than or equal to 100% in Unknown on line 0
 string(%d) "1%"
